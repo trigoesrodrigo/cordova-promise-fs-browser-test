@@ -96,9 +96,10 @@ var CordovaPromiseFS =
 	  options.storageSize = options.storageSize || 20*1024*1024;
 	  options.concurrency = options.concurrency || 3;
 	  options.retry = options.retry || [];
+		options.forceDisableCordova = options.forceDisableCordova || false;
 
 	  /* Cordova deviceready promise */
-	  var deviceready, isCordova = typeof cordova !== 'undefined';
+	  var deviceready, isCordova = typeof cordova !== 'undefined' && !options.forceDisableCordova;
 	  if(isCordova){
 	    deviceready = new Promise(function(resolve,reject){
 	      document.addEventListener("deviceready", resolve, false);
@@ -153,7 +154,15 @@ var CordovaPromiseFS =
 	        console.warn('Chrome does not support fileSystem "'+type+'". Falling back on "0" (temporary).');
 	        type = 0;
 	      }
-	      window.requestFileSystem(type, options.storageSize, resolve, reject);
+			if (options.persistent && !isCordova) {
+				navigator.webkitPersistentStorage.requestQuota(options.storageSize,
+					function(grantedBytes){
+						window.requestFileSystem(type, grantedBytes, resolve, reject);
+					}, function(e){
+						reject(new Error(e.message));
+					});
+			} else
+	      		window.requestFileSystem(type, options.storageSize, resolve, reject);
 	      setTimeout(function(){ reject(new Error('Could not retrieve FileSystem after 5 seconds.')); },5100);
 	    },reject);
 	  });

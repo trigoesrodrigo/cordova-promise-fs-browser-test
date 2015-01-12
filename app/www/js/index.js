@@ -39,21 +39,18 @@ var app = {
             persistent: true, // or false
             storageSize: 20 * 1024 * 1024, // storage size in bytes, default 20MB
             concurrency: 3, // how many concurrent uploads/downloads?
-            Promise: Q.Promise // Your favorite Promise/A+ library!
+            Promise: Q.Promise, // Your favorite Promise/A+ library!
+            forceDisableCordova: true
         };
-
-        navigator.webkitPersistentStorage.requestQuota(fsOptions.storageSize,
-            function (grantedBytes) {
-                window.requestFileSystem(PERSISTENT, grantedBytes, onInitFs, errorHandler);
-            }, function (e) {
-                console.log('Error', e);
-            });
 
         var fs = CordovaPromiseFS(fsOptions);
 
         var $list = $('#messages');
 
-        fs.write('foo.txt', {foo: 'bar'})
+        fs.fs
+            .then(function () {
+                return fs.write('foo.txt', {foo: 'bar'});
+            })
             .then(function () {
                 $list.append('<li>foo written</li>');
             })
